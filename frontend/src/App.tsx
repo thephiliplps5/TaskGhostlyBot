@@ -68,23 +68,23 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-white">
-         <div className="animate-spin text-4xl">⏳</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', color: '#fff' }}>
+         <div style={{ fontSize: '40px', animation: 'spin 1s linear infinite' }}>⏳</div>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
-         <h1 className="text-2xl font-bold mb-2">Ошибка авторизации</h1>
-         <p className="text-gray-400">Пожалуйста, откройте приложение через Telegram.</p>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px', textAlign: 'center', color: '#fff' }}>
+         <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>Ошибка авторизации</h1>
+         <p style={{ color: '#8E8E93' }}>Пожалуйста, откройте приложение через Telegram.</p>
       </div>
     );
   }
 
   return (
-    <div className="app-container relative overflow-hidden bg-background min-h-screen pb-24">
+    <div className="app-container" style={{ position: 'relative', overflow: 'hidden', minHeight: '100vh', paddingBottom: '96px', background: 'var(--bg)' }}>
       {/* 
         <Header />
         <CalendarStrip />
@@ -96,10 +96,10 @@ export default function App() {
         
         <AddTaskSheet /> 
       */}
-      <div className="p-4">
-        <h1 className="text-3xl font-bold mb-4 text-center">TaskBot React v2.0</h1>
-        <p className="text-center text-gray-400">Привет, {user.first_name}!</p>
-        <p className="text-center mt-4">Компоненты загружаются...</p>
+      <div style={{ padding: '16px', color: '#fff' }}>
+        <h1 style={{ fontSize: '30px', fontWeight: 'bold', marginBottom: '16px', textAlign: 'center' }}>TaskBot React v2.0</h1>
+        <p style={{ textAlign: 'center', color: '#8E8E93' }}>Привет, {user.first_name}!</p>
+        <p style={{ textAlign: 'center', marginTop: '16px' }}>Компоненты загружаются...</p>
       </div>
     </div>
   );

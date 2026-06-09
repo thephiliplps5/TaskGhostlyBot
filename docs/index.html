@@ -5,18 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="TaskBot — ежедневный трекер задач в Telegram" />
     <title>TaskBot</title>
-
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-
-    <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
     <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -26,13 +19,13 @@
 ============================================================ -->
 <div id="screen-home" class="screen active">
 
-    <!-- Шапка -->
     <header class="app-header">
-        <div class="header-user" id="header-user">
+        <!-- Аватар → открывает профиль -->
+        <button id="btn-open-profile" class="avatar-btn" aria-label="Профиль">
             <div class="user-avatar" id="user-avatar">?</div>
-            <span class="user-name" id="user-name">Загрузка...</span>
-        </div>
-        <button id="btn-stats" class="icon-btn" title="Статистика" aria-label="Открыть статистику">
+        </button>
+        <!-- Статистика -->
+        <button id="btn-stats" class="icon-btn" aria-label="Статистика">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
                 <line x1="6" y1="20" x2="6" y2="14"/>
@@ -40,39 +33,37 @@
         </button>
     </header>
 
-    <!-- Неделя -->
-    <section class="week-strip" id="week-strip" aria-label="Дни недели">
-        <!-- Рендерится через JS -->
-    </section>
+    <!-- Дата по центру -->
+    <div class="date-display">
+        <div class="date-month-year" id="date-month-year">Июнь '26</div>
+        <div class="date-weekday"    id="date-weekday">Вторник</div>
+    </div>
 
-    <!-- Streak блок -->
+    <!-- Неделя -->
+    <section class="week-strip" id="week-strip" aria-label="Дни недели"></section>
+
+    <!-- Streak -->
     <section class="streak-block" aria-label="Серия дней">
         <div class="flame-wrap">
             <div class="flame-icon" id="flame-icon">🔥</div>
             <div class="streak-number" id="streak-number">0</div>
         </div>
         <div class="streak-label">дней подряд</div>
-
-        <!-- Прогресс дня -->
         <div class="day-progress" id="day-progress-wrap">
             <div class="progress-bar-track">
-                <div class="progress-bar-fill" id="progress-bar" style="width: 0%"></div>
+                <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
             </div>
             <span class="progress-label" id="progress-label">0 / 0 задач</span>
         </div>
     </section>
 
-    <!-- Список задач -->
+    <!-- Задачи -->
     <section class="tasks-section">
         <div class="tasks-header">
             <h2 class="section-title" id="tasks-date-title">Задачи на сегодня</h2>
             <span class="tasks-count" id="tasks-count"></span>
         </div>
-
-        <div id="task-list" class="task-list">
-            <!-- Рендерится через JS -->
-        </div>
-
+        <div id="task-list" class="task-list"></div>
         <div id="tasks-empty" class="empty-state" hidden>
             <div class="empty-icon">📭</div>
             <p>Нет задач на этот день</p>
@@ -80,7 +71,6 @@
         </div>
     </section>
 
-    <!-- FAB кнопка -->
     <button id="btn-add-task" class="fab" aria-label="Добавить задачу">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -90,37 +80,79 @@
 
 
 <!-- ============================================================
+     ЭКРАН: ПРОФИЛЬ
+============================================================ -->
+<div id="screen-profile" class="screen">
+    <header class="app-header">
+        <button id="btn-back-profile" class="icon-btn back-btn" aria-label="Назад">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <span class="app-title">Профиль</span>
+        <div style="width:36px"></div>
+    </header>
+
+    <div class="profile-body">
+        <!-- Аватар + имя -->
+        <div class="profile-hero">
+            <div class="profile-avatar-big" id="profile-avatar-big">?</div>
+            <div class="profile-hero-name" id="profile-hero-name">—</div>
+            <div class="profile-hero-username" id="profile-hero-username"></div>
+        </div>
+
+        <!-- Статистика -->
+        <div class="stats-grid profile-stats">
+            <div class="stat-card">
+                <div class="stat-icon">🔥</div>
+                <div class="stat-value" id="prof-streak">0</div>
+                <div class="stat-label">Серия</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-value" id="prof-best">0</div>
+                <div class="stat-label">Рекорд</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-value" id="prof-rate">0%</div>
+                <div class="stat-label">30 дней</div>
+            </div>
+        </div>
+
+        <!-- Инфо -->
+        <div class="profile-info-card">
+            <div class="profile-info-row">
+                <span class="profile-info-label">🔔 Уведомления</span>
+                <span class="profile-info-value" id="prof-notify">09:00</span>
+            </div>
+            <div class="profile-info-row">
+                <span class="profile-info-label">📅 В приложении с</span>
+                <span class="profile-info-value" id="prof-since">—</span>
+            </div>
+            <div class="profile-info-row">
+                <span class="profile-info-label">📋 Задач создано</span>
+                <span class="profile-info-value" id="prof-total">0</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================================
      ЭКРАН: СТАТИСТИКА
 ============================================================ -->
 <div id="screen-stats" class="screen">
     <header class="app-header">
         <button id="btn-back-stats" class="icon-btn back-btn" aria-label="Назад">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                <polyline points="15 18 9 12 15 6"/>
-            </svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <span class="app-title">Статистика</span>
         <div style="width:36px"></div>
     </header>
-
     <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-icon">🔥</div>
-            <div class="stat-value" id="stat-streak">0</div>
-            <div class="stat-label">Серия</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">🏆</div>
-            <div class="stat-value" id="stat-best">0</div>
-            <div class="stat-label">Рекорд</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">✅</div>
-            <div class="stat-value" id="stat-rate">0%</div>
-            <div class="stat-label">За 30 дней</div>
-        </div>
+        <div class="stat-card"><div class="stat-icon">🔥</div><div class="stat-value" id="stat-streak">0</div><div class="stat-label">Серия</div></div>
+        <div class="stat-card"><div class="stat-icon">🏆</div><div class="stat-value" id="stat-best">0</div><div class="stat-label">Рекорд</div></div>
+        <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value" id="stat-rate">0%</div><div class="stat-label">За 30 дней</div></div>
     </div>
-
     <div class="heatmap-section">
         <h3 class="section-title">Активность</h3>
         <div id="heatmap" class="heatmap"></div>
@@ -129,67 +161,39 @@
 
 
 <!-- ============================================================
-     BOTTOM SHEET: Добавить / редактировать задачу
+     BOTTOM SHEET
 ============================================================ -->
 <div id="sheet-overlay" class="sheet-overlay" hidden></div>
-
-<div id="task-sheet" class="bottom-sheet" hidden aria-modal="true" role="dialog" aria-label="Задача">
+<div id="task-sheet" class="bottom-sheet" hidden aria-modal="true" role="dialog">
     <div class="sheet-handle"></div>
     <div class="sheet-content">
         <h3 class="sheet-title" id="sheet-title">Новая задача</h3>
-
-        <input
-            id="task-title-input"
-            class="task-input"
-            type="text"
-            placeholder="Название задачи..."
-            maxlength="120"
-            autocomplete="off"
-        />
+        <input id="task-title-input" class="task-input" type="text" placeholder="Название задачи..." maxlength="120" autocomplete="off" />
 
         <div class="sheet-fields">
-            <!-- Дата -->
             <div class="field-row" id="field-date">
                 <div class="field-icon">📅</div>
-                <div class="field-body">
-                    <span class="field-label">Дата</span>
-                    <span class="field-value" id="field-date-value">Сегодня</span>
-                </div>
+                <div class="field-body"><span class="field-label">Дата</span><span class="field-value" id="field-date-value">Сегодня</span></div>
                 <svg class="field-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
-
-            <!-- Приоритет -->
             <div class="field-row" id="field-priority">
                 <div class="field-icon">🎯</div>
-                <div class="field-body">
-                    <span class="field-label">Приоритет</span>
-                    <span class="field-value" id="field-priority-value">Средний</span>
-                </div>
+                <div class="field-body"><span class="field-label">Приоритет</span><span class="field-value" id="field-priority-value">Средний</span></div>
                 <svg class="field-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
-
-            <!-- Категория -->
             <div class="field-row" id="field-category">
                 <div class="field-icon">🏷</div>
-                <div class="field-body">
-                    <span class="field-label">Категория</span>
-                    <span class="field-value" id="field-category-value">Личное</span>
-                </div>
+                <div class="field-body"><span class="field-label">Категория</span><span class="field-value" id="field-category-value">Личное</span></div>
                 <svg class="field-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
-
-            <!-- Повтор -->
             <div class="field-row" id="field-repeat">
                 <div class="field-icon">🔁</div>
-                <div class="field-body">
-                    <span class="field-label">Повтор</span>
-                    <span class="field-value" id="field-repeat-value">Нет</span>
-                </div>
+                <div class="field-body"><span class="field-label">Повтор</span><span class="field-value" id="field-repeat-value">Нет</span></div>
                 <svg class="field-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
         </div>
 
-        <!-- ★ КАСТОМНЫЙ КАЛЕНДАРЬ -->
+        <!-- Кастомный календарь -->
         <div class="calendar-picker" id="calendar-picker" hidden>
             <div class="cal-header">
                 <button class="cal-nav-btn" id="cal-prev">
@@ -201,52 +205,42 @@
                 </button>
             </div>
             <div class="cal-weekdays">
-                <span>Пн</span><span>Вт</span><span>Ср</span>
-                <span>Чт</span><span>Пт</span>
+                <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span>
                 <span class="weekend">Сб</span><span class="weekend">Вс</span>
             </div>
             <div class="cal-grid" id="cal-grid"></div>
         </div>
 
-        <!-- Пикер приоритета -->
+        <!-- Пикеры -->
         <div class="picker" id="priority-picker" hidden>
-            <button class="picker-option" data-value="high" data-label="Высокий">🔴 Высокий</button>
+            <button class="picker-option" data-value="high"   data-label="Высокий">🔴 Высокий</button>
             <button class="picker-option" data-value="medium" data-label="Средний">🟡 Средний</button>
-            <button class="picker-option" data-value="low" data-label="Низкий">🟢 Низкий</button>
+            <button class="picker-option" data-value="low"    data-label="Низкий">🟢 Низкий</button>
         </div>
-
-        <!-- Пикер категории -->
         <div class="picker" id="category-picker" hidden>
-            <button class="picker-option" data-value="work" data-label="Работа">💼 Работа</button>
+            <button class="picker-option" data-value="work"     data-label="Работа">💼 Работа</button>
             <button class="picker-option" data-value="personal" data-label="Личное">👤 Личное</button>
-            <button class="picker-option" data-value="health" data-label="Здоровье">💪 Здоровье</button>
-            <button class="picker-option" data-value="study" data-label="Учёба">📚 Учёба</button>
+            <button class="picker-option" data-value="health"   data-label="Здоровье">💪 Здоровье</button>
+            <button class="picker-option" data-value="study"    data-label="Учёба">📚 Учёба</button>
         </div>
-
-        <!-- Пикер повтора -->
         <div class="picker" id="repeat-picker" hidden>
-            <button class="picker-option" data-value="" data-label="Нет">✖ Нет</button>
-            <button class="picker-option" data-value="daily" data-label="Каждый день">📆 Каждый день</button>
+            <button class="picker-option" data-value=""          data-label="Нет">✖ Нет</button>
+            <button class="picker-option" data-value="daily"     data-label="Каждый день">📆 Каждый день</button>
             <button class="picker-option" data-value="1,2,3,4,5" data-label="Пн–Пт">🗓 Пн–Пт</button>
-            <button class="picker-option" data-value="6,7" data-label="Выходные">🛋 Выходные</button>
+            <button class="picker-option" data-value="6,7"       data-label="Выходные">🛋 Выходные</button>
         </div>
 
         <div class="sheet-actions">
             <button id="btn-delete-task" class="btn-danger" hidden>Удалить</button>
             <div class="sheet-actions-right">
                 <button id="btn-cancel-sheet" class="btn-secondary">Отмена</button>
-                <button id="btn-save-task" class="btn-primary">Сохранить</button>
+                <button id="btn-save-task"   class="btn-primary">Сохранить</button>
             </div>
         </div>
     </div>
 </div>
 
-
-<!-- ============================================================
-     TOAST уведомления
-============================================================ -->
 <div id="toast" class="toast" hidden></div>
-
 <script type="module" src="js/app.js"></script>
 </body>
 </html>

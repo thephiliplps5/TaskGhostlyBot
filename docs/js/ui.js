@@ -156,13 +156,16 @@ export function renderTaskList(tasks, { onToggle, onEdit }) {
 }
 
 function createTaskElement(task, { onToggle, onEdit }) {
+    const todayISO = toISO(new Date());
+    const isToday = task.date === todayISO;
+
     const div = document.createElement('div');
-    div.className = `task-item${task.is_completed ? ' completed' : ''}`;
+    div.className = `task-item${task.is_completed ? ' completed' : ''}${!isToday ? ' locked' : ''}`;
     div.setAttribute('data-id', task.id);
     div.setAttribute('data-priority', task.priority);
 
     div.innerHTML = `
-        <button class="task-checkbox" aria-label="${task.is_completed ? 'Отменить' : 'Выполнить'}"></button>
+        <button class="task-checkbox" aria-label="${task.is_completed ? 'Отменить' : 'Выполнить'}" ${!isToday ? 'disabled' : ''}></button>
         <div class="task-body">
             <div class="task-title">${escapeHtml(task.title)}</div>
             <div class="task-meta">
@@ -177,12 +180,17 @@ function createTaskElement(task, { onToggle, onEdit }) {
     // Чекбокс
     div.querySelector('.task-checkbox').addEventListener('click', (e) => {
         e.stopPropagation();
+        if (!isToday) return; // заблокировано через CSS/disabled, но для подстраховки
         haptic('light');
         onToggle(task.id, !task.is_completed);
     });
 
-    // Редактирование по тапу на тело
-    div.addEventListener('click', () => onEdit(task));
+    // Редактирование по тапу на тело (можно разрешить смотреть, но не редактировать дату)
+    div.addEventListener('click', () => {
+        // Если хотим запретить открытие листа:
+        // if (!isToday) return;
+        onEdit(task);
+    });
 
     return div;
 }

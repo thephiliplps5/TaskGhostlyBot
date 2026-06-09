@@ -30,11 +30,13 @@ async function init() {
     let userId = null;
     let firstName = 'Пользователь';
     let username = '';
+    let photoUrl = null;
 
     if (tg?.initDataUnsafe?.user?.id) {
         userId    = tg.initDataUnsafe.user.id;
         firstName = tg.initDataUnsafe.user.first_name || firstName;
         username  = tg.initDataUnsafe.user.username  || '';
+        photoUrl  = tg.initDataUnsafe.user.photo_url || null;
     } else {
         // DEV MODE
         userId = parseInt(localStorage.getItem('dev_user_id') || '0');
@@ -47,10 +49,13 @@ async function init() {
     }
 
     store.userId = userId;
+    store.photoUrl = photoUrl;
+    store.firstName = firstName;
+    store.username = username;
     setUserId(userId);
 
     // Обновляем шапку сразу из кэша/Telegram данных
-    renderProfileHeader(firstName);
+    renderProfileHeader(firstName, photoUrl);
 
     // Создаём/обновляем профиль пользователя в БД
     const user = await upsertUser(userId, firstName, username).catch(console.error);
@@ -67,20 +72,37 @@ async function init() {
         loadTasksForDate(store.selectedDate),
     ]);
 
+    updateDateDisplay(store.selectedDate);
     renderWeekStrip(onDayClick);
     setupEventListeners();
     setupCalendar();
 }
 
 // ============================================================
-// ПРОФИЛЬ В ШАПКЕ
+// ПРОФИЛЬ В ШАПКЕ И ДАТА
 // ============================================================
 
-function renderProfileHeader(name) {
+function renderProfileHeader(name, photoUrl) {
     const avatarEl = document.getElementById('user-avatar');
-    const nameEl   = document.getElementById('user-name');
-    if (avatarEl) avatarEl.textContent = (name || '?')[0].toUpperCase();
-    if (nameEl)   nameEl.textContent   = name || 'Пользователь';
+    if (avatarEl) {
+        if (photoUrl) {
+            avatarEl.innerHTML = `<img src="${photoUrl}" alt="Avatar">`;
+            avatarEl.style.background = 'transparent';
+        } else {
+            avatarEl.innerHTML = (name || '?')[0].toUpperCase();
+            avatarEl.style.background = '';
+        }
+    }
+}
+
+function updateDateDisplay(dateISO) {
+    const d = new Date(dateISO + 'T00:00:00');
+    const month = d.toLocaleDateString('ru-RU', { month: 'long' });
+    const year = d.getFullYear().toString().slice(-2);
+    document.getElementById('date-month-year').textContent = `${month.charAt(0).toUpperCase() + month.slice(1)} '${year}`;
+    
+    const weekday = d.toLocaleDateString('ru-RU', { weekday: 'long' });
+    document.getElementById('date-weekday').textContent = weekday.charAt(0).toUpperCase() + weekday.slice(1);
 }
 
 // ============================================================
@@ -126,11 +148,19 @@ async function loadWeekProgress() {
 async function onDayClick(dateISO) {
     haptic('light');
     store.selectedDate = dateISO;
+    updateDateDisplay(dateISO);
     renderWeekStrip(onDayClick);
     await loadTasksForDate(dateISO);
 }
 
 async function handleToggleTask(taskId, newCompleted) {
+    const todayISO = toISO(new Date());
+    if (store.selectedDate !== todayISO) {
+        showToast('Можно выполнять только задачи на сегодня');
+        haptic('error');
+        return;
+    }
+
     const tasks = store.tasks.map(t =>
         t.id === taskId ? { ...t, is_completed: newCompleted } : t
     );
@@ -443,19 +473,54 @@ async function handleDeleteTask() {
 }
 
 // ============================================================
-// ЭКРАН СТАТИСТИКИ
+// ЭКРАН СТАТИСТИКИ И ПРОФИЛЯ
 // ============================================================
 
 async function showStatsScreen() {
     const { user, tasks } = await fetchUserStats(store.userId);
     renderStats(user, tasks);
     document.getElementById('screen-home').classList.remove('active');
+    document.getElementById('screen-profile').classList.remove('active');
     document.getElementById('screen-stats').classList.add('active');
 }
 
 function showHomeScreen() {
     document.getElementById('screen-stats').classList.remove('active');
+    document.getElementById('screen-profile').classList.remove('active');
     document.getElementById('screen-home').classList.add('active');
+}
+
+async function showProfileScreen() {
+    document.getElementById('screen-home').classList.remove('active');
+    document.getElementById('screen-stats').classList.remove('active');
+    document.getElementById('screen-profile').classList.add('active');
+
+    const bigAvatar = document.getElementById('profile-avatar-big');
+    if (store.photoUrl) {
+        bigAvatar.innerHTML = `<img src="${store.photoUrl}" alt="Avatar">`;
+        bigAvatar.style.background = 'transparent';
+        bigAvatar.style.border = 'none';
+    } else {
+        bigAvatar.innerHTML = (store.firstName || '?')[0].toUpperCase();
+        bigAvatar.style.background = '';
+        bigAvatar.style.border = '';
+    }
+
+    document.getElementById('profile-hero-name').textContent = store.firstName;
+    document.getElementById('profile-hero-username').textContent = store.username ? '@' + store.username : '';
+
+    const { user, tasks } = await fetchUserStats(store.userId);
+    document.getElementById('prof-streak').textContent = user.streak || 0;
+    document.getElementById('prof-best').textContent = user.best_streak || 0;
+    
+    const total30 = tasks.length;
+    const done30 = tasks.filter(t => t.is_completed).length;
+    const rate = total30 > 0 ? Math.round((done30 / total30) * 100) : 0;
+    document.getElementById('prof-rate').textContent = rate + '%';
+
+    const createdDate = new Date(user.created_at || Date.now());
+    document.getElementById('prof-since').textContent = createdDate.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+    document.getElementById('prof-total').textContent = user.total_tasks || '...';
 }
 
 // ============================================================
@@ -466,6 +531,16 @@ function setupEventListeners() {
     document.getElementById('btn-add-task').addEventListener('click', () => {
         haptic('light');
         openAddSheet();
+    });
+
+    document.getElementById('btn-open-profile').addEventListener('click', () => {
+        haptic('light');
+        showProfileScreen();
+    });
+
+    document.getElementById('btn-back-profile').addEventListener('click', () => {
+        haptic('light');
+        showHomeScreen();
     });
 
     document.getElementById('btn-stats').addEventListener('click', () => {

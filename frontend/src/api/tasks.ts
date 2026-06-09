@@ -1,15 +1,19 @@
 import { supabase } from '../lib/supabase';
 import type { DailyTask, Task, User } from '../types';
 
-export async function fetchUserByTelegramId(telegramId: number): Promise<User | null> {
+export async function upsertUser(telegramId: number, firstName: string, username: string): Promise<User | null> {
     const { data, error } = await supabase
         .from('users')
-        .select('*')
-        .eq('telegram_id', telegramId)
+        .upsert({
+            telegram_id: telegramId,
+            first_name: firstName || '',
+            username: username || '',
+        }, { onConflict: 'telegram_id', ignoreDuplicates: false })
+        .select()
         .maybeSingle();
     
     if (error) {
-        console.error('fetchUser error:', error);
+        console.error('upsertUser error:', error);
         return null;
     }
     return data;

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useStore } from './store/useStore';
 import { setSupabaseToken } from './lib/supabase';
-import { fetchUserByTelegramId, fetchTasksForDate } from './api/tasks';
+import { upsertUser, fetchTasksForDate } from './api/tasks';
 import { toISO } from './lib/utils';
 // import { Header } from './components/Header';
 // import { CalendarStrip } from './components/CalendarStrip';
@@ -48,7 +48,9 @@ export default function App() {
         setSupabaseToken(authData.token);
         
         const telegramId = authData.user.id;
-        const dbUser = await fetchUserByTelegramId(telegramId);
+        const firstName = authData.user.first_name || '';
+        const username = authData.user.username || '';
+        const dbUser = await upsertUser(telegramId, firstName, username);
         
         if (dbUser) {
            setUser(dbUser);

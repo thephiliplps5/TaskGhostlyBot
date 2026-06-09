@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../store/useStore';
 import { supabase } from '../lib/supabase';
 import { toISO } from '../lib/utils';
@@ -19,7 +20,6 @@ export function AddTaskSheet() {
     const newTask = {
       user_id: user.telegram_id,
       title: title.trim(),
-      date: selectedDate,
       priority,
       category,
       is_recurring: !!repeat,
@@ -51,95 +51,111 @@ export function AddTaskSheet() {
         </svg>
       </button>
 
-      {isOpen && (
-        <>
-          <div className="sheet-overlay" onClick={() => setIsOpen(false)} />
-          <div className="bottom-sheet">
-            <div className="sheet-handle" />
-            <div className="sheet-content">
-              <h3 className="sheet-title">Новая задача</h3>
-              <input 
-                className="task-input" 
-                type="text" 
-                placeholder="Название задачи..." 
-                maxLength={120}
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-              />
-              
-              <div className="sheet-fields">
-                <div className="field-row">
-                  <div className="field-icon">📅</div>
-                  <div className="field-body">
-                    <span className="field-label">Дата</span>
-                    <span className="field-value">{selectedDate === todayIso ? 'Сегодня' : selectedDate}</span>
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <motion.div 
+              className="sheet-overlay" 
+              onClick={() => setIsOpen(false)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            />
+            <motion.div 
+              className="bottom-sheet"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              style={{ display: 'flex', flexDirection: 'column' }}
+            >
+              <div className="sheet-handle" />
+              <div className="sheet-content">
+                <h3 className="sheet-title">Новая задача</h3>
+                <input 
+                  className="task-input" 
+                  type="text" 
+                  placeholder="Название задачи..." 
+                  maxLength={120}
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                />
+                
+                <div className="sheet-fields">
+                  <div className="field-row">
+                    <div className="field-icon">📅</div>
+                    <div className="field-body">
+                      <span className="field-label">Дата</span>
+                      <span className="field-value">{selectedDate === todayIso ? 'Сегодня' : selectedDate}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="field-row">
+                    <div className="field-icon">🎯</div>
+                    <div className="field-body">
+                      <span className="field-label">Приоритет</span>
+                      <select 
+                        className="field-value" 
+                        style={{ background: 'transparent', border: 'none', color: 'inherit', outline: 'none', WebkitAppearance: 'none' }}
+                        value={priority} 
+                        onChange={e => setPriority(e.target.value)}
+                      >
+                        <option value="high">🔴 Высокий</option>
+                        <option value="medium">🟡 Средний</option>
+                        <option value="low">🟢 Низкий</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="field-row">
+                    <div className="field-icon">🏷</div>
+                    <div className="field-body">
+                      <span className="field-label">Категория</span>
+                      <select 
+                        className="field-value" 
+                        style={{ background: 'transparent', border: 'none', color: 'inherit', outline: 'none', WebkitAppearance: 'none' }}
+                        value={category} 
+                        onChange={e => setCategory(e.target.value)}
+                      >
+                        <option value="work">💼 Работа</option>
+                        <option value="personal">👤 Личное</option>
+                        <option value="health">💪 Здоровье</option>
+                        <option value="study">📚 Учёба</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="field-row">
+                    <div className="field-icon">🔁</div>
+                    <div className="field-body">
+                      <span className="field-label">Повтор</span>
+                      <select 
+                        className="field-value" 
+                        style={{ background: 'transparent', border: 'none', color: 'inherit', outline: 'none', WebkitAppearance: 'none' }}
+                        value={repeat} 
+                        onChange={e => setRepeat(e.target.value)}
+                      >
+                        <option value="">✖ Нет</option>
+                        <option value="daily">📆 Каждый день</option>
+                        <option value="weekdays">🗓 Пн–Пт</option>
+                        <option value="weekends">🛋 Выходные</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
                 
-                <div className="field-row">
-                  <div className="field-icon">🎯</div>
-                  <div className="field-body">
-                    <span className="field-label">Приоритет</span>
-                    <select 
-                      className="field-value" 
-                      style={{ background: 'transparent', border: 'none', color: 'inherit', outline: 'none' }}
-                      value={priority} 
-                      onChange={e => setPriority(e.target.value)}
-                    >
-                      <option value="high">🔴 Высокий</option>
-                      <option value="medium">🟡 Средний</option>
-                      <option value="low">🟢 Низкий</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div className="field-row">
-                  <div className="field-icon">🏷</div>
-                  <div className="field-body">
-                    <span className="field-label">Категория</span>
-                    <select 
-                      className="field-value" 
-                      style={{ background: 'transparent', border: 'none', color: 'inherit', outline: 'none' }}
-                      value={category} 
-                      onChange={e => setCategory(e.target.value)}
-                    >
-                      <option value="work">💼 Работа</option>
-                      <option value="personal">👤 Личное</option>
-                      <option value="health">💪 Здоровье</option>
-                      <option value="study">📚 Учёба</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div className="field-row">
-                  <div className="field-icon">🔁</div>
-                  <div className="field-body">
-                    <span className="field-label">Повтор</span>
-                    <select 
-                      className="field-value" 
-                      style={{ background: 'transparent', border: 'none', color: 'inherit', outline: 'none' }}
-                      value={repeat} 
-                      onChange={e => setRepeat(e.target.value)}
-                    >
-                      <option value="">✖ Нет</option>
-                      <option value="daily">📆 Каждый день</option>
-                      <option value="weekdays">🗓 Пн–Пт</option>
-                      <option value="weekends">🛋 Выходные</option>
-                    </select>
+                <div className="sheet-actions">
+                  <div className="sheet-actions-right">
+                    <button className="btn-secondary" onClick={() => setIsOpen(false)}>Отмена</button>
+                    <button className="btn-primary" onClick={handleSave}>Сохранить</button>
                   </div>
                 </div>
               </div>
-              
-              <div className="sheet-actions">
-                <div className="sheet-actions-right">
-                  <button className="btn-secondary" onClick={() => setIsOpen(false)}>Отмена</button>
-                  <button className="btn-primary" onClick={handleSave}>Сохранить</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 }

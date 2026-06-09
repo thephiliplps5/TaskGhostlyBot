@@ -2,9 +2,9 @@ import { useEffect } from 'react';
 import { useStore } from './store/useStore';
 import { setSupabaseToken } from './lib/supabase';
 import { upsertUser, fetchTasksForDate } from './api/tasks';
-import { toISO } from './lib/utils';
 import { Header } from './components/Header';
 import { CalendarStrip } from './components/CalendarStrip';
+import { StreakBlock } from './components/StreakBlock';
 import { TaskList } from './components/TaskList';
 import { AddTaskSheet } from './components/AddTaskSheet';
 // import { ProfileSheet } from './components/ProfileSheet';
@@ -18,7 +18,8 @@ export default function App() {
     isLoading, 
     setLoading,
     authError,
-    setAuthError
+    setAuthError,
+    selectedDate
   } = useStore();
 
   useEffect(() => {
@@ -63,7 +64,7 @@ export default function App() {
         
         if (dbUser) {
            setUser(dbUser);
-           const todayTasks = await fetchTasksForDate(telegramId, toISO(new Date()));
+           const todayTasks = await fetchTasksForDate(telegramId, selectedDate);
            setTasks(todayTasks);
         } else {
            setAuthError(`DB Error: ${dbError?.message || JSON.stringify(dbError)}`);
@@ -76,9 +77,19 @@ export default function App() {
       }
     }
     
-    // In dev mode without TG, we might need a mock initData
     initApp();
   }, []);
+
+  // Fetch tasks when selectedDate changes
+  useEffect(() => {
+    if (user && selectedDate) {
+      const fetchSelected = async () => {
+        const dailyTasks = await fetchTasksForDate(user.telegram_id, selectedDate);
+        setTasks(dailyTasks);
+      };
+      fetchSelected();
+    }
+  }, [selectedDate, user, setTasks]);
 
   if (isLoading) {
     return (
@@ -106,6 +117,7 @@ export default function App() {
     <div className="app-container" style={{ position: 'relative', overflow: 'hidden', minHeight: '100vh', paddingBottom: '96px', background: 'var(--bg)' }}>
       <Header />
       <CalendarStrip />
+      <StreakBlock />
       <TaskList />
       
       {/* <AnimatePresence>

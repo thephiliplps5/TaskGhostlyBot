@@ -28,10 +28,13 @@ export default function App() {
         
         const initData = tg?.initData || "";
         
-        // Fetch JWT from our Python bot backend
-        const authRes = await fetch('http://127.0.0.1:8000/api/auth', {
+        // Fetch JWT from our Python bot backend via Localtunnel (HTTPS)
+        const authRes = await fetch('https://true-places-prove.loca.lt/api/auth', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Bypass-Tunnel-Reminder': 'true'
+          },
           body: JSON.stringify({ initData })
         });
         

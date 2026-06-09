@@ -210,10 +210,23 @@ async def main():
     logger.info("Bot is running... (polling mode)")
 
     try:
+        # Запускаем aiohttp сервер параллельно
+        from api import create_app
+        from aiohttp import web
+        
+        app = create_app()
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, '0.0.0.0', 8000)
+        await site.start()
+        logger.info("API server is running on http://0.0.0.0:8000")
+
+        # Запускаем polling
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:
         scheduler.shutdown()
         await bot.session.close()
+        await runner.cleanup()
 
 
 if __name__ == "__main__":

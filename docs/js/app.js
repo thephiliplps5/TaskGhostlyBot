@@ -161,23 +161,35 @@ async function handleToggleTask(taskId, newCompleted) {
         return;
     }
 
+    const oldCompletedCount = store.tasks.filter(t => t.is_completed).length;
+
     const tasks = store.tasks.map(t =>
         t.id === taskId ? { ...t, is_completed: newCompleted } : t
     );
     store.tasks = tasks;
+    
+    const newCompletedCount = tasks.filter(t => t.is_completed).length;
+    const totalCount = tasks.length;
+
     renderTaskList(tasks, { onToggle: handleToggleTask, onEdit: openEditSheet });
     renderDayProgress(tasks);
 
     try {
         await toggleTaskComplete(taskId, newCompleted);
-        const completed = tasks.filter(t => t.is_completed).length;
-        store.setWeekProgress(store.selectedDate, { total: tasks.length, completed });
+        store.setWeekProgress(store.selectedDate, { total: totalCount, completed: newCompletedCount });
         renderWeekStrip(onDayClick);
 
-        // Проверяем — если все выполнены, показываем мотивацию
-        if (newCompleted && tasks.every(t => t.is_completed) && tasks.length > 0) {
-            showToast('🔥 Все задачи выполнены!');
+        // Проверяем — если все выполнены, показываем мотивацию и увеличиваем серию
+        if (newCompletedCount === totalCount && totalCount > 0 && oldCompletedCount < totalCount) {
+            showToast('🔥 Все задачи выполнены! +1 к серии');
             haptic('medium');
+            store.streak += 1;
+            renderStreak(store.streak);
+        } 
+        // Если галочку сняли и все были выполнены, отнимаем локальную серию
+        else if (newCompletedCount < totalCount && oldCompletedCount === totalCount && totalCount > 0) {
+            store.streak = Math.max(0, store.streak - 1);
+            renderStreak(store.streak);
         }
     } catch (e) {
         console.error('Toggle error:', e);

@@ -70,11 +70,29 @@ export function renderStreak(streak) {
     // Анимация числа
     animateNumber(num, parseInt(num.textContent) || 0, streak, 600);
 
+    const svgFlame = `
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="url(#flame-grad)" stroke="none">
+        <defs>
+            <linearGradient id="flame-grad" x1="0%" y1="100%" x2="0%" y2="0%">
+                <stop offset="0%" stop-color="#FF453A" />
+                <stop offset="50%" stop-color="#FF9F0A" />
+                <stop offset="100%" stop-color="#FFD60A" />
+            </linearGradient>
+        </defs>
+        <path d="M12 2C12 2 15 6 15 10C15 11 14.5 12 14 13C14 13 16 11 18 13C19 14.2 20 16 20 18C20 21 17 22 12 22C7 22 4 20 4 17C4 14.5 5.5 12.5 7 11C8.5 9.5 9 7 9 7C9 7 10 9 11 10C12 11 12.5 10 12.5 10C12.5 10 11 7 12 2Z" />
+    </svg>`;
+
+    const svgSleep = `
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 4h6l-6 8h6" />
+        <path d="M11 12h5l-5 8h5" />
+    </svg>`;
+
     if (streak === 0) {
-        flame.textContent = '💤';
+        flame.innerHTML = svgSleep;
         flame.classList.add('zero');
     } else {
-        flame.textContent = '🔥';
+        flame.innerHTML = svgFlame;
         flame.classList.remove('zero');
     }
 }

@@ -3,11 +3,11 @@ import { useStore } from './store/useStore';
 import { setSupabaseToken } from './lib/supabase';
 import { upsertUser, fetchTasksForDate } from './api/tasks';
 import { toISO } from './lib/utils';
-// import { Header } from './components/Header';
-// import { CalendarStrip } from './components/CalendarStrip';
-// import { TaskList } from './components/TaskList';
+import { Header } from './components/Header';
+import { CalendarStrip } from './components/CalendarStrip';
+import { TaskList } from './components/TaskList';
+import { AddTaskSheet } from './components/AddTaskSheet';
 // import { ProfileSheet } from './components/ProfileSheet';
-// import { AddTaskSheet } from './components/AddTaskSheet';
 // import { AnimatePresence } from 'framer-motion';
 
 export default function App() {
@@ -104,22 +104,15 @@ export default function App() {
 
   return (
     <div className="app-container" style={{ position: 'relative', overflow: 'hidden', minHeight: '100vh', paddingBottom: '96px', background: 'var(--bg)' }}>
-      {/* 
-        <Header />
-        <CalendarStrip />
-        <TaskList />
-        
-        <AnimatePresence>
-          {isProfileOpen && <ProfileSheet />}
-        </AnimatePresence>
-        
-        <AddTaskSheet /> 
-      */}
-      <div style={{ padding: '16px', color: '#fff' }}>
-        <h1 style={{ fontSize: '30px', fontWeight: 'bold', marginBottom: '16px', textAlign: 'center' }}>TaskBot React v2.0</h1>
-        <p style={{ textAlign: 'center', color: '#8E8E93' }}>Привет, {user.first_name}!</p>
-        <p style={{ textAlign: 'center', marginTop: '16px' }}>Компоненты загружаются...</p>
-      </div>
+      <Header />
+      <CalendarStrip />
+      <TaskList />
+      
+      {/* <AnimatePresence>
+        {isProfileOpen && <ProfileSheet />}
+      </AnimatePresence> */}
+      
+      <AddTaskSheet /> 
     </div>
   );
 }

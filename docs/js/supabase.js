@@ -32,6 +32,21 @@ export async function fetchUser(telegramId) {
     return data;
 }
 
+// Создаёт пользователя если не существует (при первом открытии Mini App)
+export async function upsertUser(telegramId, firstName, username) {
+    const { data, error } = await supabase
+        .from('users')
+        .upsert({
+            telegram_id: telegramId,
+            first_name: firstName || '',
+            username: username || '',
+        }, { onConflict: 'telegram_id', ignoreDuplicates: false })
+        .select()
+        .maybeSingle();
+    if (error) console.error('upsertUser error:', error);
+    return data;
+}
+
 
 // ============================================================
 // ЗАДАЧИ
@@ -64,6 +79,53 @@ export async function createTask({ userId, title, date, priority, category, isRe
         .single();
     if (error) throw error;
     return data;
+}
+
+// Создаёт повторяющуюся задачу сразу на 30 дней вперёд
+export async function batchCreateRecurringTasks({ userId, title, startDate, priority, category, recurPattern }) {
+    const rows = [];
+    const start = new Date(startDate + 'T00:00:00');
+
+    for (let i = 0; i <= 30; i++) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        const iso = d.toISOString().split('T')[0];
+
+        // День недели: 0=вс, 1=пн ... 6=сб → переводим в 1=пн..7=вс
+        const dow = d.getDay();
+        const dayNum = dow === 0 ? 7 : dow;  // 1=пн, 7=вс
+        const isWeekend = dayNum >= 6;
+
+        let include = false;
+        if (recurPattern === 'daily') {
+            include = true;
+        } else if (recurPattern === '1,2,3,4,5') {
+            include = dayNum <= 5;
+        } else if (recurPattern === '6,7') {
+            include = isWeekend;
+        }
+
+        if (include) {
+            rows.push({
+                user_id: userId,
+                title,
+                date: iso,
+                priority: priority || 'medium',
+                category: category || 'personal',
+                is_recurring: true,
+                recur_pattern: recurPattern,
+            });
+        }
+    }
+
+    if (rows.length === 0) return [];
+
+    const { data, error } = await supabase
+        .from('tasks')
+        .upsert(rows, { onConflict: 'user_id,title,date', ignoreDuplicates: true })
+        .select();
+    if (error) throw error;
+    return data || [];
 }
 
 export async function updateTask(taskId, updates) {

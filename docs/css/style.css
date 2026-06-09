@@ -95,6 +95,35 @@ body {
     letter-spacing: -0.3px;
 }
 
+/* Профиль пользователя в шапке */
+.header-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-blue), #5E5CE6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    text-transform: uppercase;
+}
+
+.user-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.3px;
+}
+
 .icon-btn {
     width: 36px;
     height: 36px;
@@ -551,13 +580,14 @@ body {
 .field-label { font-size: 11px; color: var(--text-tertiary); font-weight: 500; }
 .field-value { font-size: 15px; color: var(--text-primary); font-weight: 500; }
 
-.hidden-date-input {
-    position: absolute;
-    opacity: 0;
-    width: 100%;
-    height: 100%;
-    top: 0; left: 0;
-    cursor: pointer;
+/* Chevron в строках полей */
+.field-chevron {
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+    transition: transform 0.2s;
+}
+.field-row.open .field-chevron {
+    transform: rotate(90deg);
 }
 
 /* Picker */
@@ -727,3 +757,132 @@ body {
 
 /* ---- Utils ---- */
 [hidden] { display: none !important; }
+
+/* ============================================================
+   КАСТОМНЫЙ КАЛЕНДАРЬ
+   ============================================================ */
+
+.calendar-picker {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    animation: fadeSlideIn 0.18s ease;
+}
+
+.cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.cal-month-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    flex: 1;
+    letter-spacing: -0.3px;
+}
+
+.cal-nav-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--border);
+    border: none;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    flex-shrink: 0;
+}
+.cal-nav-btn:active { transform: scale(0.9); background: var(--border-light); }
+.cal-nav-btn:hover  { background: var(--border-light); }
+
+.cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 8px 12px 4px;
+    gap: 2px;
+}
+
+.cal-weekdays span {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 4px 0;
+}
+
+.cal-weekdays span.weekend { color: rgba(255,69,58,0.7); }
+
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 4px 12px 12px;
+    gap: 2px;
+}
+
+.cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 50%;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: background 0.15s, transform 0.1s;
+    position: relative;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+}
+
+.cal-day:active { transform: scale(0.88); }
+
+/* Сегодня */
+.cal-day.today {
+    color: var(--accent-blue);
+    font-weight: 700;
+}
+.cal-day.today::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+}
+
+/* Выбранный день */
+.cal-day.selected {
+    background: var(--accent-blue);
+    color: #fff;
+    font-weight: 700;
+}
+.cal-day.selected.today::after { background: rgba(255,255,255,0.6); }
+
+/* Прошедшие дни */
+.cal-day.past { color: var(--text-tertiary); }
+
+/* Пустая ячейка */
+.cal-day.empty {
+    cursor: default;
+    pointer-events: none;
+}
+
+/* Выходные */
+.cal-day.weekend:not(.selected) { color: rgba(255,69,58,0.8); }
+.cal-day.past.weekend { color: rgba(255,69,58,0.4); }

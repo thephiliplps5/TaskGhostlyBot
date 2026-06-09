@@ -28,7 +28,10 @@
 
     <!-- Шапка -->
     <header class="app-header">
-        <span class="app-title">Главная</span>
+        <div class="header-user" id="header-user">
+            <div class="user-avatar" id="user-avatar">?</div>
+            <span class="user-name" id="user-name">Загрузка...</span>
+        </div>
         <button id="btn-stats" class="icon-btn" title="Статистика" aria-label="Открыть статистику">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
@@ -152,7 +155,7 @@
                     <span class="field-label">Дата</span>
                     <span class="field-value" id="field-date-value">Сегодня</span>
                 </div>
-                <input type="date" id="task-date-input" class="hidden-date-input" />
+                <svg class="field-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
 
             <!-- Приоритет -->
@@ -162,6 +165,7 @@
                     <span class="field-label">Приоритет</span>
                     <span class="field-value" id="field-priority-value">Средний</span>
                 </div>
+                <svg class="field-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
 
             <!-- Категория -->
@@ -171,6 +175,7 @@
                     <span class="field-label">Категория</span>
                     <span class="field-value" id="field-category-value">Личное</span>
                 </div>
+                <svg class="field-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
 
             <!-- Повтор -->
@@ -180,7 +185,27 @@
                     <span class="field-label">Повтор</span>
                     <span class="field-value" id="field-repeat-value">Нет</span>
                 </div>
+                <svg class="field-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
+        </div>
+
+        <!-- ★ КАСТОМНЫЙ КАЛЕНДАРЬ -->
+        <div class="calendar-picker" id="calendar-picker" hidden>
+            <div class="cal-header">
+                <button class="cal-nav-btn" id="cal-prev">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <span class="cal-month-label" id="cal-month-label"></span>
+                <button class="cal-nav-btn" id="cal-next">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+            </div>
+            <div class="cal-weekdays">
+                <span>Пн</span><span>Вт</span><span>Ср</span>
+                <span>Чт</span><span>Пт</span>
+                <span class="weekend">Сб</span><span class="weekend">Вс</span>
+            </div>
+            <div class="cal-grid" id="cal-grid"></div>
         </div>
 
         <!-- Пикер приоритета -->

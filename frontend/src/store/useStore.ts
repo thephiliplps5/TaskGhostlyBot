@@ -8,6 +8,7 @@ interface AppState {
   selectedDate: string;
   isLoading: boolean;
   isProfileOpen: boolean;
+  authError: string | null;
   weekProgress: Record<string, WeekProgress>;
   
   setUser: (user: User) => void;
@@ -15,6 +16,7 @@ interface AppState {
   setSelectedDate: (date: string) => void;
   setLoading: (loading: boolean) => void;
   setProfileOpen: (isOpen: boolean) => void;
+  setAuthError: (error: string) => void;
   setWeekProgress: (date: string, progress: WeekProgress) => void;
   
   // Computed-like action to update streak
@@ -28,6 +30,7 @@ export const useStore = create<AppState>((set) => ({
   selectedDate: toISO(new Date()),
   isLoading: true,
   isProfileOpen: false,
+  authError: null,
   weekProgress: {},
 
   setUser: (user) => set({ user }),
@@ -35,6 +38,7 @@ export const useStore = create<AppState>((set) => ({
   setSelectedDate: (date) => set({ selectedDate: date }),
   setLoading: (loading) => set({ isLoading: loading }),
   setProfileOpen: (isOpen) => set({ isProfileOpen: isOpen }),
+  setAuthError: (error) => set({ authError: error }),
   setWeekProgress: (date, progress) => 
     set((state) => ({ 
       weekProgress: { ...state.weekProgress, [date]: progress } 

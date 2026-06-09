@@ -16,7 +16,9 @@ export default function App() {
     setUser, 
     setTasks, 
     isLoading, 
-    setLoading
+    setLoading,
+    authError,
+    setAuthError
   } = useStore();
 
   useEffect(() => {
@@ -27,6 +29,11 @@ export default function App() {
         tg?.ready();
         
         const initData = tg?.initData || "";
+        if (!initData) {
+          setAuthError("Нет initData от Telegram. Откройте внутри Telegram.");
+          setLoading(false);
+          return;
+        }
         
         // Fetch JWT from our Python bot backend via Localtunnel (HTTPS)
         const authRes = await fetch('https://true-places-prove.loca.lt/api/auth', {
@@ -39,7 +46,9 @@ export default function App() {
         });
         
         if (!authRes.ok) {
-           console.error("Auth failed:", await authRes.text());
+           const errText = await authRes.text();
+           console.error("Auth failed:", errText);
+           setAuthError(`API Error (${authRes.status}): ${errText}`);
            setLoading(false);
            return;
         }
@@ -50,15 +59,18 @@ export default function App() {
         const telegramId = authData.user.id;
         const firstName = authData.user.first_name || '';
         const username = authData.user.username || '';
-        const dbUser = await upsertUser(telegramId, firstName, username);
+        const { user: dbUser, error: dbError } = await upsertUser(telegramId, firstName, username);
         
         if (dbUser) {
            setUser(dbUser);
            const todayTasks = await fetchTasksForDate(telegramId, toISO(new Date()));
            setTasks(todayTasks);
+        } else {
+           setAuthError(`DB Error: ${dbError?.message || JSON.stringify(dbError)}`);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Init Error", err);
+        setAuthError(`Catch Error: ${err?.message || String(err)}`);
       } finally {
         setLoading(false);
       }
@@ -80,7 +92,12 @@ export default function App() {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px', textAlign: 'center', color: '#fff' }}>
          <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>Ошибка авторизации</h1>
-         <p style={{ color: '#8E8E93' }}>Пожалуйста, откройте приложение через Telegram.</p>
+         <p style={{ color: '#8E8E93', marginBottom: '16px' }}>Пожалуйста, откройте приложение через Telegram.</p>
+         {authError && (
+           <div style={{ background: 'rgba(255,0,0,0.2)', padding: '12px', borderRadius: '8px', border: '1px solid red', maxWidth: '100%', wordBreak: 'break-all' }}>
+              <p style={{ color: '#ff4444', fontSize: '13px' }}>{authError}</p>
+           </div>
+         )}
       </div>
     );
   }

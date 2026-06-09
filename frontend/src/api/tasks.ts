@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import type { DailyTask, Task, User } from '../types';
 
-export async function upsertUser(telegramId: number, firstName: string, username: string): Promise<User | null> {
+export async function upsertUser(telegramId: number, firstName: string, username: string): Promise<{ user: User | null; error: any }> {
     const { data, error } = await supabase
         .from('users')
         .upsert({
@@ -14,9 +14,8 @@ export async function upsertUser(telegramId: number, firstName: string, username
     
     if (error) {
         console.error('upsertUser error:', error);
-        return null;
     }
-    return data;
+    return { user: data, error };
 }
 
 export async function fetchTasksForDate(telegramId: number, dateISO: string): Promise<DailyTask[]> {

@@ -58,8 +58,12 @@ ALTER TABLE task_completions ENABLE ROW LEVEL SECURITY;
 
 -- Функция для получения ID пользователя из JWT
 -- Наш кастомный сервер кладёт telegram_id в поле sub токена.
+-- Добавлена поддержка новых версий PostgREST (request.jwt.claims)
 CREATE OR REPLACE FUNCTION public.telegram_id() RETURNS BIGINT AS $$
-  SELECT (NULLIF(current_setting('request.jwt.claim.sub', true), ''))::bigint;
+  SELECT coalesce(
+    nullif(current_setting('request.jwt.claim.sub', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')
+  )::bigint;
 $$ LANGUAGE SQL STABLE;
 
 -- ПОЛИТИКИ ДЛЯ USERS

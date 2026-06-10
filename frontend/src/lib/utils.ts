@@ -1,10 +1,3 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
-}
-
 export function toISO(date: Date): string {
     const d = new Date(date);
     d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -22,4 +15,10 @@ export function haptic(style: 'light' | 'medium' | 'heavy' | 'error' | 'success'
     } else {
         tg.HapticFeedback.impactOccurred(style);
     }
+}
+
+export function showToast(message: string, durationMs: number = 2000) {
+    // Will be used by Toast component later
+    const event = new CustomEvent('taskbot-toast', { detail: { message, durationMs } });
+    window.dispatchEvent(event);
 }

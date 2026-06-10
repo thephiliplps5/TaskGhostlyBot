@@ -1,12 +1,14 @@
+import { motion } from 'framer-motion';
 import type { DailyTask } from '../types';
 
 interface TaskItemProps {
   task: DailyTask;
   isLocked: boolean;
+  isBusy: boolean;
   onToggle: (taskId: string, currentStatus: boolean, completionId?: string) => void;
 }
 
-export function TaskItem({ task, isLocked, onToggle }: TaskItemProps) {
+export function TaskItem({ task, isLocked, isBusy, onToggle }: TaskItemProps) {
   let categoryClass = '';
   if (task.category === 'work') categoryClass = 'cat-work';
   else if (task.category === 'personal') categoryClass = 'cat-personal';
@@ -24,11 +26,16 @@ export function TaskItem({ task, isLocked, onToggle }: TaskItemProps) {
     <div 
       className={`task-item ${task.is_completed ? 'completed' : ''} ${isLocked ? 'locked' : ''}`}
       data-priority={task.priority}
+      style={{ opacity: isBusy ? 0.6 : 1, pointerEvents: isBusy ? 'none' : 'auto' }}
       onClick={() => {
-        if (!isLocked) onToggle(task.id, task.is_completed, task.completion_id);
+        if (!isLocked && !isBusy) onToggle(task.id, task.is_completed, task.completion_id);
       }}
     >
-      <div className="task-checkbox" />
+      <motion.div 
+        className="task-checkbox"
+        animate={task.is_completed ? { scale: [1, 1.2, 1] } : {}}
+        transition={{ duration: 0.2 }}
+      />
       <div className="task-body">
         <div className="task-title">{task.title}</div>
         <div className="task-meta">

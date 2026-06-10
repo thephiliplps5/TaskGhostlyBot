@@ -1,4 +1,5 @@
 import os
+import logging
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
@@ -6,6 +7,8 @@ load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+
+logger = logging.getLogger(__name__)
 
 # Service role клиент — полный доступ к БД (только в боте, никогда на фронтенде!)
 _client: Client | None = None
@@ -46,56 +49,57 @@ async def get_user_streak(telegram_id: int) -> dict:
 
 
 # ============================================
-# Задачи
+# Задачи (V2 — через RPC get_daily_tasks)
 # ============================================
 
-async def get_tasks_for_date(user_id: int, date: str) -> list:
-    """Получить задачи пользователя на дату (YYYY-MM-DD)"""
+async def get_tasks_for_date(user_id: int, date_str: str) -> list:
+    """
+    Получить задачи пользователя на дату (YYYY-MM-DD).
+    Использует RPC get_daily_tasks из schema_v2, которая:
+    - Подтягивает задачи с start_date <= date и (end_date IS NULL или end_date >= date)
+    - Учитывает повторяющиеся задачи (daily, weekdays, weekends)
+    - LEFT JOIN с task_completions для статуса выполнения
+    """
     sb = get_supabase()
-    result = sb.table("tasks").select("*").eq("user_id", user_id).eq("date", date).order("created_at").execute()
+    result = sb.rpc("get_daily_tasks", {
+        "p_user_id": user_id,
+        "p_date": date_str
+    }).execute()
     return result.data or []
 
 
-async def get_week_summary(user_id: int, dates: list[str]) -> list:
-    """Прогресс по задачам за список дат"""
-    sb = get_supabase()
-    result = sb.table("week_progress").select("*").eq("user_id", user_id).in_("date", dates).execute()
-    return result.data or []
-
-
 # ============================================
-# Streak — вызывается из scheduler
+# Streak — вызывается из scheduler (V2)
 # ============================================
 
 async def process_streak_for_all_users(yesterday: str) -> None:
-    """Запускается каждую ночь: обновляет streak всем пользователям"""
+    """
+    Запускается каждую ночь: обновляет streak всем пользователям.
+    V2: Использует get_daily_tasks RPC для подсчёта задач за вчера.
+    """
     sb = get_supabase()
 
     # Получаем всех пользователей
-    users = sb.table("users").select("telegram_id, streak, best_streak, last_active_date").execute().data
+    users = sb.table("users").select(
+        "telegram_id, streak, best_streak"
+    ).execute().data
 
     for user in users:
         uid = user["telegram_id"]
 
-        # Считаем задачи за вчера
-        tasks = sb.table("tasks").select("is_completed").eq("user_id", uid).eq("date", yesterday).execute().data
+        # Получаем задачи за вчера через RPC (учитывает повторяющиеся!)
+        tasks = sb.rpc("get_daily_tasks", {
+            "p_user_id": uid,
+            "p_date": yesterday
+        }).execute().data
 
         if not tasks:
             # Нет задач — streak не меняется
             continue
 
         total = len(tasks)
-        completed = sum(1 for t in tasks if t["is_completed"])
-        is_perfect = (total == completed)
-
-        # Логируем день
-        sb.table("day_logs").upsert({
-            "user_id": uid,
-            "date": yesterday,
-            "total_tasks": total,
-            "completed_tasks": completed,
-            "is_perfect": is_perfect
-        }, on_conflict="user_id,date").execute()
+        completed = sum(1 for t in tasks if t.get("is_completed", False))
+        is_perfect = (total == completed and total > 0)
 
         if is_perfect:
             new_streak = user["streak"] + 1
@@ -105,9 +109,11 @@ async def process_streak_for_all_users(yesterday: str) -> None:
                 "best_streak": new_best,
                 "last_active_date": yesterday
             }).eq("telegram_id", uid).execute()
+            logger.info(f"[Streak] User {uid}: streak {user['streak']} → {new_streak}")
         else:
             # Не все выполнены — streak сбрасывается
             sb.table("users").update({
                 "streak": 0,
                 "last_active_date": yesterday
             }).eq("telegram_id", uid).execute()
+            logger.info(f"[Streak] User {uid}: streak reset (completed {completed}/{total})")

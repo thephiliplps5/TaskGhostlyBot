@@ -16,6 +16,7 @@ CREATE TABLE users (
     best_streak INTEGER DEFAULT 0,
     total_tasks INTEGER DEFAULT 0,
     notify_time TEXT DEFAULT '09:00',
+    last_active_date DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

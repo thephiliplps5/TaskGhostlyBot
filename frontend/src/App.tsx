@@ -36,8 +36,9 @@ export default function App() {
           return;
         }
         
-        // Fetch JWT from our Python bot backend via Localtunnel (HTTPS)
-        const authRes = await fetch('https://true-places-prove.loca.lt/api/auth', {
+        // Fetch JWT from our bot backend API
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+        const authRes = await fetch(`${apiUrl}/api/auth`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',

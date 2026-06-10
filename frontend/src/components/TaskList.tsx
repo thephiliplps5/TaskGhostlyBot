@@ -1,64 +1,42 @@
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../store/useStore';
 import { TaskItem } from './TaskItem';
-import { supabase } from '../lib/supabase';
-import { toISO } from '../lib/utils';
+import { toggleTaskComplete, fetchTasksForDate } from '../api/tasks';
+import { toISO, haptic } from '../lib/utils';
 
 export function TaskList() {
   const { tasks, setTasks, selectedDate, user } = useStore();
+  const [busyTaskId, setBusyTaskId] = useState<string | null>(null);
 
-  const handleToggle = async (taskId: string, currentStatus: boolean, completionId?: string) => {
-    if (!user) return;
+  const handleToggle = async (taskId: string, currentStatus: boolean, _completionId?: string) => {
+    if (!user || busyTaskId) return; // Блокировка двойного клика
+    
     const newStatus = !currentStatus;
+    setBusyTaskId(taskId);
+
+    // Haptic feedback
+    haptic(newStatus ? 'success' : 'light');
 
     // Optimistic UI update
-    const updatedTasks = tasks.map(t => {
-      if (t.id === taskId) {
-        return { ...t, is_completed: newStatus };
-      }
-      return t;
-    });
-    setTasks(updatedTasks);
+    const previousTasks = [...tasks];
+    setTasks(tasks.map(t => 
+      t.id === taskId ? { ...t, is_completed: newStatus } : t
+    ));
 
-    // Save to DB
-    if (newStatus) {
-      const { data, error } = await supabase
-        .from('task_completions')
-        .insert({
-          task_id: taskId,
-          user_id: user.telegram_id,
-          date: selectedDate,
-          is_completed: true
-        })
-        .select()
-        .single();
-        
-      if (!error && data) {
-        setTasks(updatedTasks.map(t => t.id === taskId ? { ...t, completion_id: data.id } : t));
-      } else {
-        console.error("Complete error", error);
-        // Revert on error
-        setTasks(tasks);
-      }
-    } else {
-      if (completionId) {
-        const { error } = await supabase
-          .from('task_completions')
-          .delete()
-          .eq('id', completionId);
-          
-        if (error) {
-          console.error("Uncomplete error", error);
-          setTasks(tasks);
-        } else {
-          setTasks(updatedTasks.map(t => t.id === taskId ? { ...t, completion_id: undefined } : t));
-        }
-      }
-    }
-
-    // Check if all tasks are completed for the day (to update streak animation later)
-    const allNowCompleted = updatedTasks.length > 0 && updatedTasks.every(t => t.is_completed);
-    if (allNowCompleted && selectedDate === toISO(new Date())) {
-      // Trigger streak increment locally or rely on server
+    try {
+      await toggleTaskComplete(taskId, user.telegram_id, selectedDate, newStatus);
+      
+      // Reload tasks to get fresh completion_id
+      const freshTasks = await fetchTasksForDate(user.telegram_id, selectedDate);
+      setTasks(freshTasks);
+    } catch (err) {
+      console.error("Toggle error:", err);
+      haptic('error');
+      // Revert on error
+      setTasks(previousTasks);
+    } finally {
+      setBusyTaskId(null);
     }
   };
 
@@ -67,11 +45,16 @@ export function TaskList() {
 
   if (tasks.length === 0) {
     return (
-      <div className="empty-state">
+      <motion.div 
+        className="empty-state"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
         <div className="empty-icon">👻</div>
         <p>Здесь пока пусто!</p>
-        <p className="empty-sub">Добавьте новую задачу ниже.</p>
-      </div>
+        <p className="empty-sub">Нажмите + чтобы добавить задачу</p>
+      </motion.div>
     );
   }
 
@@ -85,14 +68,25 @@ export function TaskList() {
       </div>
       
       <div className="task-list">
-        {tasks.map(task => (
-          <TaskItem 
-            key={task.id} 
-            task={task} 
-            isLocked={isLocked} 
-            onToggle={handleToggle} 
-          />
-        ))}
+        <AnimatePresence mode="popLayout">
+          {tasks.map((task, index) => (
+            <motion.div
+              key={task.id}
+              layout
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, x: -50 }}
+              transition={{ delay: index * 0.03 }}
+            >
+              <TaskItem 
+                task={task} 
+                isLocked={isLocked}
+                isBusy={busyTaskId === task.id}
+                onToggle={handleToggle} 
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     </div>
   );

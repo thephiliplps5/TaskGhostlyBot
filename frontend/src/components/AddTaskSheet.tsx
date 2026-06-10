@@ -1,50 +1,59 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../store/useStore';
-import { supabase } from '../lib/supabase';
-import { toISO } from '../lib/utils';
-import { fetchTasksForDate } from '../api/tasks';
+import { createTask, fetchTasksForDate } from '../api/tasks';
+import { toISO, haptic } from '../lib/utils';
 
 export function AddTaskSheet() {
   const { user, selectedDate, setTasks } = useStore();
   const [isOpen, setIsOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState('medium');
   const [category, setCategory] = useState('personal');
   const [repeat, setRepeat] = useState('');
   
+  const resetForm = () => {
+    setTitle('');
+    setPriority('medium');
+    setCategory('personal');
+    setRepeat('');
+  };
+
   const handleSave = async () => {
-    if (!title.trim() || !user) return;
+    if (!title.trim() || !user || isSaving) return;
+    setIsSaving(true);
     
-    const newTask = {
+    const result = await createTask({
       user_id: user.telegram_id,
       title: title.trim(),
-      priority,
+      priority: priority as 'low' | 'medium' | 'high',
       category,
       is_recurring: !!repeat,
-      recur_pattern: repeat || null,
+      recur_pattern: (repeat || undefined) as any,
       start_date: selectedDate
-    };
+    });
     
-    const { error } = await supabase.from('tasks').insert(newTask);
-    if (error) {
-      console.error("Add task error", error);
-      alert("Ошибка при сохранении задачи");
-    } else {
+    if (result) {
+      haptic('success');
       setIsOpen(false);
-      setTitle('');
+      resetForm();
       // Reload tasks
       const updatedTasks = await fetchTasksForDate(user.telegram_id, selectedDate);
       setTasks(updatedTasks);
+    } else {
+      haptic('error');
     }
+    
+    setIsSaving(false);
   };
 
   const todayIso = toISO(new Date());
 
   return (
     <>
-      <button className="fab" onClick={() => setIsOpen(true)}>
+      <button className="fab" onClick={() => { setIsOpen(true); haptic('light'); }}>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <line x1="12" y1="5" x2="12" y2="19"/>
           <line x1="5" y1="12" x2="19" y2="12"/>
@@ -56,7 +65,7 @@ export function AddTaskSheet() {
           <>
             <motion.div 
               className="sheet-overlay" 
-              onClick={() => setIsOpen(false)}
+              onClick={() => { setIsOpen(false); resetForm(); }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -80,6 +89,7 @@ export function AddTaskSheet() {
                   maxLength={120}
                   value={title}
                   onChange={e => setTitle(e.target.value)}
+                  autoFocus
                 />
                 
                 <div className="sheet-fields">
@@ -147,8 +157,15 @@ export function AddTaskSheet() {
                 
                 <div className="sheet-actions">
                   <div className="sheet-actions-right">
-                    <button className="btn-secondary" onClick={() => setIsOpen(false)}>Отмена</button>
-                    <button className="btn-primary" onClick={handleSave}>Сохранить</button>
+                    <button className="btn-secondary" onClick={() => { setIsOpen(false); resetForm(); }}>Отмена</button>
+                    <button 
+                      className="btn-primary" 
+                      onClick={handleSave}
+                      disabled={isSaving || !title.trim()}
+                      style={{ opacity: (isSaving || !title.trim()) ? 0.5 : 1 }}
+                    >
+                      {isSaving ? 'Сохранение...' : 'Сохранить'}
+                    </button>
                   </div>
                 </div>
               </div>
